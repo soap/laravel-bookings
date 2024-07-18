@@ -10,6 +10,7 @@ use App\Jongman\Services\ReservationService;
 use App\Jongman\Services\ResourceService;
 use App\Jongman\Services\ScheduleService;
 use App\Models\Schedule;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class ScheduleController extends Controller
@@ -51,7 +52,7 @@ class ScheduleController extends Controller
     {
         $targetTimezone = auth()->user()->timezone;
 
-        $selectedDate = \Carbon\Carbon::now()->timezone($targetTimezone);
+        $selectedDate = $date? Carbon::parse($date, $targetTimezone) : Carbon::today()->timezone($targetTimezone);
         $selectedDate->startOfWeek($schedule->weekday_start);
 
         $weekStartDate = Date::parse($selectedDate->format('Y-m-d h:i:s'), $targetTimezone);

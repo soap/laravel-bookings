@@ -6,7 +6,7 @@
     </x-slot>
 
     <div class="py-12">
-        <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
+        <div class="mx-auto max-w-full sm:px-6 lg:px-8">
             <div class="overflow-hidden bg-white shadow-xl dark:bg-gray-800 sm:rounded-lg">
                 <div class="w-full my-2 px-5">
                     <div class="w-full text-center">{{ $schedule->name }}</div>
