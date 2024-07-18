@@ -37,11 +37,15 @@ class DateDiff
 
     public function hours()
     {
-        $hours = intval($this->seconds / 3600) - intval($this->Days() * 24);
+        $hours = intval($this->seconds / 3600) - intval($this->days() * 24);
 
         return $hours;
     }
 
+    /**
+     * 2 hours  30 minutes  20 seconds => totalSeconds 2 * 3600 + 30 * 60 + 20
+     * should return 30
+     */
     public function minutes()
     {
         $minutes = intval($this->seconds / 60) % 60;
@@ -56,16 +60,16 @@ class DateDiff
      */
     public static function betweenDates(Date $date1, Date $date2)
     {
-        if ($date1->equalTo($date2)) {
+        if ($date1->equals($date2)) {
             return DateDiff::null();
         }
 
         $compareDate = $date2;
-        if ($date1->timezone != $date2->timezone) {
-            $compareDate = $date2->timezone($date1->timezone);
+        if ($date1->timezone() != $date2->timezone()) {
+            $compareDate = $date2->toTimezone($date1->timezone());
         }
 
-        return new DateDiff($compareDate->timestamp - $date1->timestamp);
+        return new DateDiff($compareDate->timestamp() - $date1->timestamp());
     }
 
     /**
@@ -95,7 +99,7 @@ class DateDiff
                 $minute = $parts[1];
             }
 
-            return self::Create($day, $hour, $minute);
+            return self::create($day, $hour, $minute);
         } else {
             $matches = [];
 
@@ -230,11 +234,11 @@ class DateDiff
         if ($this->days() > 0) {
             $str .= $this->days().' '.'days'.' ';
         }
-        if ($this->Hours() > 0) {
-            $str .= $this->Hours().' '.'hours'.' ';
+        if ($this->hours() > 0) {
+            $str .= $this->hours().' '.'hours'.' ';
         }
-        if ($this->Minutes() > 0) {
-            $str .= $this->Minutes().' '.'minutes'.' ';
+        if ($this->minutes() > 0) {
+            $str .= $this->minutes().' '.'minutes'.' ';
         }
 
         return trim($str);

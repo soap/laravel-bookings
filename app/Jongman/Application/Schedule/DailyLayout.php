@@ -9,7 +9,7 @@ use App\Jongman\Interfaces\ScheduleLayoutInterface;
 
 class DailyLayout implements DailyLayoutInterface
 {
-    private $_listing;
+    private $_reservationListing;
 
     private $_scheduleLayout;
 
@@ -31,7 +31,7 @@ class DailyLayout implements DailyLayoutInterface
     public function getLayout(Date $date, $resourceId)
     {
         try {
-            $hideBlockedPeridos = true;
+            $hideBlockedPeridos = false;
 
             $items = $this->_reservationListing->onDateForResource($date, $resourceId);
 
@@ -68,7 +68,7 @@ class DailyLayout implements DailyLayoutInterface
      */
     public function isDateReservable(Date $date)
     {
-        return $date->gte(Date::now());
+        return $date->dateCompare(Date::now()) >= 0;
     }
 
     /**
@@ -109,6 +109,7 @@ class DailyLayout implements DailyLayoutInterface
 
         for ($i = 0; $i < count($periods); $i++) {
             $span = 1;
+            /** @var $currentPeriod SchedulePeriod */
             $currentPeriod = $periods[$i];
             $periodStart = $currentPeriod->beginDate();
             $periodLength = $periodStart->getDifference($currentPeriod->endDate())->minutes();
@@ -116,18 +117,21 @@ class DailyLayout implements DailyLayoutInterface
             if (! $currentPeriod->isLabelled() && ($periodStart->minute() == 0 && $periodLength <= 30)) {
                 $span = 0;
                 $nextPeriodTime = $periodStart->addMinutes(60);
-
                 $tempPeriod = $currentPeriod;
+
                 while ($tempPeriod != null && $tempPeriod->beginDate()->lessThan($nextPeriodTime)) {
                     $span++;
-                    $tempPeriod = $periods[++$i];
+                    $i++;
+                    $tempPeriod = isset($periods[$i]) ? $periods[$i] : null;
                 }
 
                 if ($span > 0) {
                     $i--;
                 }
+
             }
             $periodsToReturn[] = new SpanablePeriod($currentPeriod, $span);
+            ray($periodsToReturn);
         }
 
         return $periodsToReturn;

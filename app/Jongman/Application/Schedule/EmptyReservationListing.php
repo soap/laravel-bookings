@@ -4,13 +4,14 @@ namespace App\Jongman\Application\Schedule;
 
 use App\Jongman\Common\Date;
 use App\Jongman\Interfaces\ReservationListingInterface;
+use Countable;
 
-class EmptyReservationListing implements ReservationListingInterface
+class EmptyReservationListing implements Countable, ReservationListingInterface
 {
     /**
      * {@inheritDoc}
      */
-    public function count()
+    public function count(): int
     {
         return 0;
     }

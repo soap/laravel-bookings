@@ -11,22 +11,28 @@ class SchedulePeriod
 {
     public function __construct(protected Date $begin, protected Date $end, protected $label = null) {}
 
-    public function getBegin()
+    /**
+     * get begin time part only (hour and minute, second = 0)
+     */
+    public function begin()
     {
         return $this->begin->getTime();
     }
 
-    public function getEnd()
+    /**
+     * get begin time part only (hour and minute, second = 0)
+     */
+    public function end()
     {
         return $this->end->getTime();
     }
 
-    public function getBeginDate()
+    public function beginDate()
     {
         return $this->begin;
     }
 
-    public function getEndDate()
+    public function endDate()
     {
         return $this->end;
     }
@@ -86,7 +92,7 @@ class SchedulePeriod
 
     public function toTimezone($timezone)
     {
-        return new SchedulePeriod($this->begin->timezone($timezone), $this->end->timezone($timezone), $this->label);
+        return new SchedulePeriod($this->begin->toTimezone($timezone), $this->end->toTimezone($timezone), $this->label);
     }
 
     public function __toString()

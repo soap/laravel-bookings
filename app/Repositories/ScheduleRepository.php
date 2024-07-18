@@ -10,16 +10,16 @@
 namespace App\Repositories;
 
 use App\Jongman\Common\Time;
+use App\Jongman\Domain\Schedule;
 use App\Jongman\Enums\PeriodTypeEnum;
 use App\Jongman\Interfaces\LayoutFactoryInterface;
 use App\Jongman\Interfaces\ScheduleRepositoryInterface;
-use App\Jongman\Domain\Schedule;
 use App\Models\Schedule as ScheduleModel;
 use App\Models\ScheduleLayout as ScheduleLayoutModel;
 
 class ScheduleRepository implements ScheduleRepositoryInterface
 {
-    public function all()
+    public function getAll()
     {
         $rows = ScheduleModel::all();
         $schedules = [];

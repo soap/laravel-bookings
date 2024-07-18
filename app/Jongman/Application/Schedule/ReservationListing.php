@@ -79,7 +79,7 @@ class ReservationListing implements ImmutableReservationListingInterface
         if ($currentDate->isSameDay($lastDate)) {
             $this->addOnDate($item, $currentDate);
         } else {
-            while ($currentDate->lessThan($lastDate) && ! $currentDate->isSameDay($lastDate) && $currentDate->lessThan($this->max)) {
+            while ($currentDate->lessThan($lastDate) && ! $currentDate->isSameDate($lastDate) && $currentDate->lessThan($this->max)) {
                 $this->addOnDate($item, $currentDate);
                 $currentDate = $currentDate->addDays(1);
             }
@@ -159,7 +159,7 @@ class ReservationListing implements ImmutableReservationListingInterface
 
     public function onDateForResource(Date $date, $resourceId)
     {
-        $key = $date->Format('Ymd').'|'.$resourceId;
+        $key = $date->format('Ymd').'|'.$resourceId;
 
         if (! array_key_exists($key, $this->_reservationsByDateAndResource)) {
             return [];

@@ -2,6 +2,9 @@
 
 namespace App\Jongman\Common;
 
+/**
+ * Can be replace with Spatie/Period ?
+ */
 class DateRange
 {
     /**
@@ -35,14 +38,14 @@ class DateRange
     public function __construct(Date $begin, Date $end, $timezone = null)
     {
         if (empty($timezone)) {
-            $this->_timezone = $begin->timezone;
+            $this->_timezone = $begin->timezone();
         } else {
             $this->_timezone = $timezone;
-            if ($begin->timezone != $timezone) {
-                $begin = $begin->timezone($timezone);
+            if ($begin->timezone() != $timezone) {
+                $begin = $begin->toTimezone($timezone);
             }
-            if ($end->timezone != $timezone) {
-                $end = $end->timezone($timezone);
+            if ($end->timezone() != $timezone) {
+                $end = $end->toTimezone($timezone);
             }
         }
 
@@ -73,9 +76,9 @@ class DateRange
     public function contains(Date $date, $inclusive = true)
     {
         if ($inclusive) {
-            return $this->_begin->lte($date) && $this->_end->gte($date) >= 0;
+            return $this->_begin->lessThanOrEqual($date) && $this->_end->greaterThanOrEqual($date);
         } else {
-            return $this->_begin->lte($date) <= 0 && $this->_end->gt($date) > 0;
+            return $this->_begin->lessThanOrEqual($date) && $this->_end->greatThan($date);
         }
     }
 
@@ -84,7 +87,7 @@ class DateRange
      */
     public function containsRange(DateRange $dateRange)
     {
-        return $this->_begin->lte($dateRange->_begin) && $this->_end->gte($dateRange->_end);
+        return $this->_begin->lessThanOrEqual($dateRange->_begin) && $this->_end->greaterThanOrEqual($dateRange->_end);
     }
 
     /**
@@ -96,7 +99,7 @@ class DateRange
     {
         return ($this->contains($dateRange->getBegin()) || $this->contains($dateRange->getEnd()) ||
                 $dateRange->contains($this->getBegin()) || $dateRange->contains($this->getEnd())) &&
-        (! $this->getBegin()->equalTo($dateRange->getEnd()) && ! $this->getEnd()->equalTo($dateRange->getBegin()));
+        (! $this->getBegin()->equals($dateRange->getEnd()) && ! $this->getEnd()->equals($dateRange->getBegin()));
     }
 
     /**
@@ -106,11 +109,11 @@ class DateRange
      */
     public function occursOn(Date $date)
     {
-        $timezone = $date->timezone;
+        $timezone = $date->timezone();
         $compare = $this;
 
         if ($timezone != $this->_timezone) {
-            $compare = $this->timezone($timezone);
+            $compare = $this->toTimezone($timezone);
         }
 
         $beginMidnight = $compare->getBegin();
@@ -146,24 +149,19 @@ class DateRange
      */
     public function dates()
     {
-        $current = $this->_begin->copy()->getDate();
-        
-        ray($current);
+        $current = $this->_begin->getDate();
 
         if ($this->_end->isMidnight()) {
-            $end = $this->_end->copy()->addDays(-1)->getDate();
+            $end = $this->_end->addDays(-1)->getDate();
         } else {
-            $end = $this->_end->copy()->getDate();
+            $end = $this->_end->getDate();
         }
 
-        ray($end);
+        $dates = [$current];
 
-        $dates = [$current->copy()];
-
-        for ($day = 1; $current->lte($end); $day++) {
+        for ($day = 0; $current->lessThan($end); $day++) {
             $current = $current->addDays(1);
-            $dates[] = $current->copy();
-            ray($dates);
+            $dates[] = $current;
         }
 
         return $dates;
@@ -195,7 +193,7 @@ class DateRange
      */
     public function equals(DateRange $otherRange)
     {
-        return $this->_begin->eq($otherRange->getBegin()) && $this->_end->eq($otherRange->getEnd());
+        return $this->_begin->equals($otherRange->getBegin()) && $this->_end->equls($otherRange->getEnd());
     }
 
     /**
@@ -204,7 +202,7 @@ class DateRange
      */
     public function timezone($timezone)
     {
-        return new DateRange($this->_begin->timezone($timezone), $this->_end->timezone($timezone));
+        return new DateRange($this->_begin->toTimezone($timezone), $this->_end->toTimezone($timezone));
     }
 
     /**
@@ -212,7 +210,7 @@ class DateRange
      */
     public function utc()
     {
-        return new DateRange($this->_begin->utc(), $this->_end->utc());
+        return new DateRange($this->_begin->toUtc(), $this->_end->toUtc());
     }
 
     /**
@@ -239,6 +237,8 @@ class DateRange
 
     /**
      * @return int
+     *
+     * @internal This method is not exits in Spatie/Period
      */
     public function numberOfWeekdays()
     {
@@ -248,7 +248,11 @@ class DateRange
     }
 
     /**
+     * Not exits in Spatie/Period
+     *
      * @return int
+     *
+     * @internal This method is not exits in Spatie/Period
      */
     public function numberOfWeekendDays()
     {
@@ -287,15 +291,7 @@ class DateRange
      */
     public function isSameDate()
     {
-        return $this->_begin->isSameDay($this->_end);
-    }
-
-    /**
-     * @return string
-     */
-    public function toTimezone()
-    {
-        return $this->_begin->timezone();
+        return $this->_begin->dateEquals($this->_end);
     }
 
     /**

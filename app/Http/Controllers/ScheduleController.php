@@ -10,7 +10,6 @@ use App\Jongman\Services\ReservationService;
 use App\Jongman\Services\ResourceService;
 use App\Jongman\Services\ScheduleService;
 use App\Models\Schedule;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class ScheduleController extends Controller
@@ -19,7 +18,7 @@ class ScheduleController extends Controller
         private ScheduleService $scheduleService,
         private ResourceService $resourceService,
         private ReservationService $reservationService
-        ) {}
+    ) {}
 
     /**
      * Display a listing of the resource.
@@ -52,9 +51,10 @@ class ScheduleController extends Controller
     {
         $targetTimezone = auth()->user()->timezone;
 
-        $selectedDate = $date ? Date::parse($date) : Date::now();
-        $selectedDate->timezone = $targetTimezone;
-        $weekStartDate = $selectedDate->copy()->startOfWeek($schedule->weekday_start);
+        $selectedDate = \Carbon\Carbon::now()->timezone($targetTimezone);
+        $selectedDate->startOfWeek($schedule->weekday_start);
+
+        $weekStartDate = Date::parse($selectedDate->format('Y-m-d h:i:s'), $targetTimezone);
         $weekEndDate = $weekStartDate->copy()->addDays($schedule->visible_days - 1);
 
         $activeScheduleId = $schedule->id;
@@ -63,18 +63,18 @@ class ScheduleController extends Controller
         $rids = $schedule->resources()->pluck('id')->toArray();
         $resources = $schedule->resources;
 
-        //$scheduleLayout = $this->scheduleService->getLayout($schedule->id);
-        //$dateLayout = $scheduleLayout->getLayout(Date::parse($weekStartDate));
-
         $scheduleDates = new DateRange($weekStartDate, $weekEndDate, $targetTimezone);
-        ray($scheduleDates);
+        $nextDate = $weekEndDate->addDays(7 - $schedule->visible_days + 1);
+        $previousDate = $weekStartDate->addDays(-1 * (7 - $schedule->visible_days + 1));
+
         $reservationListing = new EmptyReservationListing();
-    
+        // we need to get the reservations for the week
+
         $dailyLayout = $this->scheduleService->getDailyLayout($activeScheduleId, new ScheduleLayoutFactory($targetTimezone), $reservationListing);
 
         $today = Date::now($targetTimezone);
-        
-        return view('schedules.show', compact('schedule', 'scheduleDates', 'today', 'dailyLayout', 'resources'));
+
+        return view('schedules.show', compact('schedule', 'scheduleDates', 'today', 'dailyLayout', 'resources', 'previousDate', 'nextDate'));
     }
 
     /**

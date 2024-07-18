@@ -85,27 +85,36 @@ class PeakTimes
     }
 
     private $allDay = false;
+
     private $beginTime = null;
+
     private $endTime = null;
+
     private $everyDay = false;
+
     private $weekdays = [];
+
     private $allYear = false;
+
     private $beginDay = 0;
+
     private $beginMonth = 0;
+
     private $endDay = 0;
+
     private $endMonth = 0;
 
     /**
-     * @param bool $allDay
-     * @param string|Time $beginTime
-     * @param string|Time $endTime
-     * @param bool $everyDay
-     * @param int[] $weekdays
-     * @param bool $allYear
-     * @param int $beginDay
-     * @param int $beginMonth
-     * @param int $endDay
-     * @param int $endMonth
+     * @param  bool  $allDay
+     * @param  string|Time  $beginTime
+     * @param  string|Time  $endTime
+     * @param  bool  $everyDay
+     * @param  int[]  $weekdays
+     * @param  bool  $allYear
+     * @param  int  $beginDay
+     * @param  int  $beginMonth
+     * @param  int  $endDay
+     * @param  int  $endMonth
      */
     public function __construct($allDay, $beginTime, $endTime, $everyDay, $weekdays, $allYear, $beginDay, $beginMonth, $endDay, $endMonth)
     {
@@ -113,19 +122,19 @@ class PeakTimes
 
         $this->beginTime = new NullTime();
         $this->endTime = new NullTime();
-        if (!$this->allDay) {
-            $this->beginTime = is_a($beginTime, 'Time') ? $beginTime : (!empty($beginTime) ? Time::Parse($beginTime) : new NullTime());
-            $this->endTime = is_a($endTime, 'Time') ? $endTime : (!empty($endTime) ? Time::Parse($endTime) : new NullTime());
+        if (! $this->allDay) {
+            $this->beginTime = is_a($beginTime, 'Time') ? $beginTime : (! empty($beginTime) ? Time::Parse($beginTime) : new NullTime());
+            $this->endTime = is_a($endTime, 'Time') ? $endTime : (! empty($endTime) ? Time::Parse($endTime) : new NullTime());
         }
 
         $this->everyDay = $everyDay;
-        if (!$this->everyDay) {
+        if (! $this->everyDay) {
             $this->weekdays = $weekdays;
         }
 
         $this->allYear = $allYear;
 
-        if (!$allYear) {
+        if (! $allYear) {
             $this->beginDay = $beginDay;
             $this->beginMonth = $beginMonth;
             $this->endDay = $endDay;
@@ -137,13 +146,12 @@ class PeakTimes
     {
         $allDay = intval($row[ColumnNames::PEAK_ALL_DAY]);
 
-        $beginTime = !empty($row[ColumnNames::PEAK_START_TIME]) ? Time::Parse($row[ColumnNames::PEAK_START_TIME]) : null;
-        $endTime = !empty($row[ColumnNames::PEAK_END_TIME]) ? Time::Parse($row[ColumnNames::PEAK_END_TIME]) : null;
+        $beginTime = ! empty($row[ColumnNames::PEAK_START_TIME]) ? Time::Parse($row[ColumnNames::PEAK_START_TIME]) : null;
+        $endTime = ! empty($row[ColumnNames::PEAK_END_TIME]) ? Time::Parse($row[ColumnNames::PEAK_END_TIME]) : null;
 
         $everyDay = intval($row[ColumnNames::PEAK_EVERY_DAY]);
 
-        $weekdays = !empty($row[ColumnNames::PEAK_DAYS]) ? explode(',', $row[ColumnNames::PEAK_DAYS]) : [];
-
+        $weekdays = ! empty($row[ColumnNames::PEAK_DAYS]) ? explode(',', $row[ColumnNames::PEAK_DAYS]) : [];
 
         $allYear = intval($row[ColumnNames::PEAK_ALL_YEAR]);
 
@@ -181,7 +189,7 @@ class PeakTimes
             $endDay = 1;
         }
 
-        if ($this->isEveryDay() || empty($weekdays) || !is_array($weekdays)) {
+        if ($this->isEveryDay() || empty($weekdays) || ! is_array($weekdays)) {
             $weekdays = null;
         }
 
@@ -214,7 +222,7 @@ class PeakTimes
 
     public function inTimezone($timezone)
     {
-        if (!$this->isAllDay()) {
+        if (! $this->isAllDay()) {
             $this->beginTime = new Time($this->beginTime->hour(), $this->beginTime->minute(), 0, $timezone);
             $this->endTime = new Time($this->endTime->hour(), $this->endTime->minute(), 0, $timezone);
         }

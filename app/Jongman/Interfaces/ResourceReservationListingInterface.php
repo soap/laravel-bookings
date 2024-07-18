@@ -4,10 +4,7 @@ namespace App\Jongman\Interfaces;
 
 interface ResourceReservationListingInterface
 {
-    /**
-     * @return int
-     */
-    public function count();
+    public function count(): int;
 
     /**
      * @return array|ReservationListItem[]

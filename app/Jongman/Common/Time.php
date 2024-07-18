@@ -22,7 +22,7 @@ class Time
     {
         $date = Date::parse($time, $timezone);
 
-        return new Time($date->hour, $date->minute, $date->second, $date->timezone);
+        return new Time($date->hour(), $date->minute(), $date->second(), $date->timezone());
     }
 
     public function hour()

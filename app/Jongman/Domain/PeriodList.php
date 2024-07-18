@@ -23,7 +23,7 @@ class PeriodList
 
     public function add(SchedulePeriod $period)
     {
-        if ($this->alreadyAdded($period->getBeginDate(), $period->getEndDate())) {
+        if ($this->alreadyAdded($period->beginDate(), $period->endDate())) {
             return;
         }
 
@@ -43,16 +43,16 @@ class PeriodList
         $startExists = false;
         $endExists = false;
 
-        if (array_key_exists($start->timestamp, $this->_addedStarts)) {
+        if (array_key_exists($start->timestamp(), $this->_addedStarts)) {
             $startExists = true;
         }
 
-        if (array_key_exists($end->timestamp, $this->_addedEnds)) {
+        if (array_key_exists($end->timestamp(), $this->_addedEnds)) {
             $endExists = true;
         }
 
-        $this->_addedTimes[$start->timestamp] = true;
-        $this->_addedEnds[$end->timestamp] = true;
+        $this->_addedTimes[$start->timestamp()] = true;
+        $this->_addedEnds[$end->timestamp()] = true;
 
         return $startExists || $endExists;
     }

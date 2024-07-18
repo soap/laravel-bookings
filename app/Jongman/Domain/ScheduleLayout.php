@@ -13,13 +13,13 @@ class ScheduleLayout implements ScheduleLayoutInterface
 {
     /**
      * @var array|LayoutPeriod
-     * An array of periods for each day of the week
+     *                         An array of periods for each day of the week
      */
     private $_periods = [];
 
     /**
      * @var bool
-     * Whether to use different layouts for different days of the week
+     *           Whether to use different layouts for different days of the week
      */
     private $usingDailyLayouts = false;
 
@@ -43,10 +43,13 @@ class ScheduleLayout implements ScheduleLayoutInterface
     public function __construct(private $targetTimezone = null)
     {
         if ($this->targetTimezone === null) {
-            $this->targetTimezone = auth()->user()->timezone;
+            $this->targetTimezone = 'Asia/Bangkok'; //auth()->user()->timezone;
         }
     }
 
+    /**
+     * test passed
+     */
     public function getSlots($dayOfWeek = null)
     {
         if (is_null($dayOfWeek)) {
@@ -101,7 +104,7 @@ class ScheduleLayout implements ScheduleLayoutInterface
         $dayOfWeek = null
     ) {
         if ($this->startTimeCanBeAdded($startTime, $dayOfWeek)) {
-            $this->layoutTimezone = $startTime->getTimezone();
+            $this->layoutTimezone = $startTime->timezone();
             $layoutPeriod = new LayoutPeriod($startTime, $endTime, $periodType, $label);
             if (! is_null($dayOfWeek)) {
                 $this->usingDailyLayouts = true;
@@ -128,7 +131,7 @@ class ScheduleLayout implements ScheduleLayoutInterface
     public function getLayout(Date $layoutDate, $hideBlockedPeriods = false)
     {
         $targetTimezone = $this->targetTimezone;
-        $layoutDate = $layoutDate->timezone($targetTimezone);
+        $layoutDate = $layoutDate->toTimezone($targetTimezone);
 
         if ($this->usingDailyLayouts) {
             return $this->getLayoutDaily($layoutDate, $hideBlockedPeriods);
@@ -150,16 +153,16 @@ class ScheduleLayout implements ScheduleLayoutInterface
 
         $layoutTimezone = $periods[0]->timezone();
         $workingDate = Date::create(
-            $layoutDate->year,
-            $layoutDate->month,
-            $layoutDate->day,
+            $layoutDate->year(),
+            $layoutDate->month(),
+            $layoutDate->day(),
             0,
             0,
             0,
             $layoutTimezone
         );
 
-        $midnight = $layoutDate->getDate(); // end of day
+        $midnight = $layoutDate->getDate(); // get only date hour, minute, second to be zero
 
         /* @var $period LayoutPeriod */
         foreach ($periods as $period) {
@@ -174,8 +177,8 @@ class ScheduleLayout implements ScheduleLayoutInterface
             $labelEnd = null;
 
             // convert to target timezone
-            $periodStart = $workingDate->copy()->setTimeFromTimeObject($start)->timezone($targetTimezone);
-            $periodEnd = $workingDate->copy()->setTimeFromTimeObject($end, true)->timezone($targetTimezone);
+            $periodStart = $workingDate->setTime($start)->toTimezone($targetTimezone);
+            $periodEnd = $workingDate->setTime($end, true)->toTimezone($targetTimezone);
 
             if ($periodEnd->lessThan($periodStart)) {
                 $periodEnd = $periodEnd->addDays(1);
@@ -185,20 +188,20 @@ class ScheduleLayout implements ScheduleLayoutInterface
             $endTime = $periodEnd->getTime();
 
             if ($this->bothDatesAreOff($periodStart, $periodEnd, $layoutDate)) {
-                $periodStart = $layoutDate->setTimeFromTimeObject($startTime);
-                $periodEnd = $layoutDate->setTimeFromTimeObject($endTime, true);
+                $periodStart = $layoutDate->setTime($startTime);
+                $periodEnd = $layoutDate->setTime($endTime, true);
             }
 
             if ($this->spansMidnight($periodStart, $periodEnd)) {
                 if ($periodStart->lessThan($midnight)) {
                     // add compensating period at end
-                    $start = $layoutDate->setTimeFromTimeObject($startTime);
+                    $start = $layoutDate->setTime($startTime);
                     $end = $periodEnd->addDays(1);
                     $list->add($this->buildPeriod($periodType, $start, $end, $label, $labelEnd));
                 } else {
                     // add compensating period at start
                     $start = $periodStart->addDays(-1);
-                    $end = $layoutDate->setTimeFromTimeObject($endTime, true);
+                    $end = $layoutDate->setTime($endTime, true);
                     $list->add($this->buildPeriod($periodType, $start, $end, $label, $labelEnd));
                 }
             }
@@ -213,14 +216,14 @@ class ScheduleLayout implements ScheduleLayoutInterface
 
         $layout = $list->getItems();
         $this->sortItems($layout);
-        //$this->sddCached($layout, $workingDate);
+        //$this->addCached($layout, $workingDate);
 
         return $layout;
     }
 
     private function getLayoutDaily(Date $requestedDate, $hideBlockedPeriods = false)
     {
-        if ($requestedDate->timezone != $this->targetTimezone) {
+        if ($requestedDate->timezone() != $this->targetTimezone) {
             throw new Exception('Target timezone and requested timezone do not match');
         }
         /*
@@ -231,9 +234,9 @@ class ScheduleLayout implements ScheduleLayoutInterface
         */
         // check cache
         $baseDateInLayoutTz = Date::Create(
-            $requestedDate->year,
-            $requestedDate->month,
-            $requestedDate->day,
+            $requestedDate->year(),
+            $requestedDate->month(),
+            $requestedDate->day(),
             0,
             0,
             0,
@@ -244,7 +247,7 @@ class ScheduleLayout implements ScheduleLayoutInterface
         $this->addDailyPeriods($requestedDate->weekday(), $baseDateInLayoutTz, $requestedDate, $list, $hideBlockedPeriods);
 
         if ($this->layoutTimezone != $this->targetTimezone) {
-            $requestedDateInTargetTz = $requestedDate->copy()->timezone($this->layoutTimezone);
+            $requestedDateInTargetTz = $requestedDate->toTimezone($this->layoutTimezone);
 
             $adjustment = 0;
             if ($requestedDateInTargetTz->format('YmdH') < $requestedDate->format('YmdH')) {
@@ -283,8 +286,8 @@ class ScheduleLayout implements ScheduleLayoutInterface
             if ($hideBlockedPeriods && ! $period->isReservable()) {
                 continue;
             }
-            $begin = $baseDateInLayoutTz->setTimeFromTimeObject($period->start)->timezone($this->targetTimezone);
-            $end = $baseDateInLayoutTz->setTimeFromTimeObject($period->end, true)->timezone($this->targetTimezone);
+            $begin = $baseDateInLayoutTz->setTime($period->start)->toTimezone($this->targetTimezone);
+            $end = $baseDateInLayoutTz->setTime($period->end, true)->toTimezone($this->targetTimezone);
             // only add this period if it occurs on the requested date
             if ($begin->dateEquals($requestedDate) || ($end->dateEquals($requestedDate) && ! $end->isMidnight())) {
                 $built = $this->buildPeriod($period->periodTypeClass(), $begin, $end, $period->label);
@@ -340,24 +343,24 @@ class ScheduleLayout implements ScheduleLayoutInterface
     public function getPeriod(Date $date)
     {
         $timezone = $this->layoutTimezone;
-        $tempDate = $date->copy()->timezone($timezone);
+        $tempDate = $date->toTimezone($timezone);
         $periods = $this->getPeriods($tempDate);
 
         /** @var $period LayoutPeriod */
         foreach ($periods as $period) {
             $start = Date::create(
-                $tempDate->year,
-                $tempDate->month,
-                $tempDate->day,
+                $tempDate->year(),
+                $tempDate->month(),
+                $tempDate->day(),
                 $period->start->hour(),
                 $period->start->minute(),
                 0,
                 $timezone
             );
             $end = Date::create(
-                $tempDate->year,
-                $tempDate->month,
-                $tempDate->day,
+                $tempDate->year(),
+                $tempDate->month(),
+                $tempDate->day(),
                 $period->end->hour(),
                 $period->end->minute(),
                 0,
@@ -483,19 +486,19 @@ class ScheduleLayout implements ScheduleLayoutInterface
     {
         $slots = 0;
         $peakSlots = 0;
-        $start = $startDate->timezone($this->layoutTimezone);
-        $end = $endDate->timezone($this->layoutTimezone);
+        $start = $startDate->toTimezone($this->layoutTimezone);
+        $end = $endDate->toTimezone($this->layoutTimezone);
         $testDate = $start;
 
         $periods = $this->getPeriods($startDate);
 
         /** var LayoutPeriod $period */
         foreach ($periods as $period) {
-            if (!$period->isReservable()) {
+            if (! $period->isReservable()) {
                 continue;
             }
 
-            if ($start->lte($testDate->setTimeObject($period->start)) && $end->gte($testDate->setTimeObject($period->end, true)) >= 0) {
+            if ($start->lessThanOrEqual($testDate->setTime($period->start)) && $end->greaterThanOrEqual($testDate->setTimet($period->end, true))) {
 
                 $isPeak = $this->hasPeakTimesDefined() && $this->peakTimes->isWithinPeak($testDate->setTime($period->start));
                 if ($isPeak) {
@@ -511,6 +514,6 @@ class ScheduleLayout implements ScheduleLayoutInterface
 
     public function fitsToHours()
     {
-        return false;
+        return true;
     }
 }

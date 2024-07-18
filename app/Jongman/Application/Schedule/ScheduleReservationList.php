@@ -2,11 +2,23 @@
 
 namespace App\Jongman\Application\Schedule;
 
+use App\Jongman\Common\Date;
 use App\Jongman\Common\Time;
+use App\Jongman\Domain\ScheduleLayout;
 use App\Jongman\Interfaces\ScheduleReservationListInterface;
 
 class ScheduleReservationList implements ScheduleReservationListInterface
 {
+    private $destinationTimezone;
+
+    private $midNight;
+
+    private $layoutDateStart;
+
+    private $layoutDateEnd;
+
+    private $layoutItems;
+
     private $itemsByStartTime = [];
 
     /**
@@ -19,12 +31,12 @@ class ScheduleReservationList implements ScheduleReservationListInterface
      */
     private $layoutIndexByEndTime = [];
 
-    public function __construct(private array $items, private ScheduleLayout $layout, private Date $layoutDate, private bool $hideBlockedPeridos = false)
+    public function __construct(private $items, private ScheduleLayout $layout, private Date $layoutDate, private bool $hideBlockedPeridos = false)
     {
-        $this->destinationTimezone = $this->layout->getTimezone();
+        $this->destinationTimezone = $this->layout->timezone();
         $this->midNight = new Time(0, 0, 0, $this->destinationTimezone);
-        $this->layoutDateStart = $layoutDate->copy()->timezone($this->destinationTimezone)->getDate();
-        $this->layoutDateEnd = $this->layoutDateStart->copy()->addDays(1);
+        $this->layoutDateStart = $layoutDate->toTimezone($this->destinationTimezone)->getDate();
+        $this->layoutDateEnd = $this->layoutDateStart->addDays(1);
         $this->layoutItems = $this->layout->getLayout($layoutDate, $hideBlockedPeridos);
     }
 
@@ -33,7 +45,7 @@ class ScheduleReservationList implements ScheduleReservationListInterface
      *
      * @return ReservationSlot[]
      */
-    public function buildSlots()
+    public function buildSlots(): array
     {
         $slots = [];
         for ($currentIndex = 0; $currentIndex < count($this->items); $currentIndex++) {
@@ -46,7 +58,7 @@ class ScheduleReservationList implements ScheduleReservationListInterface
                 if ($this->itemEndsOnFutureDate($item)) {
                     $endTime = $this->layoutDateEnd;
                 } else {
-                    $endTime = $item->endDate()->timezone($this->destinationTimezone);
+                    $endTime = $item->endDate()->toTimezone($this->destinationTimezone);
                 }
 
                 $endingPeriodIndex = max($this->getLayoutIndexEndingAt($endTime), $currentIndex);
@@ -65,6 +77,8 @@ class ScheduleReservationList implements ScheduleReservationListInterface
                 $slots[] = new EmptyReservationSlot($layoutItem, $layoutItem, $this->layoutDateStart, $layoutItem->isReservable());
             }
         }
+
+        return $slots;
     }
 
     private function IndexItems()
@@ -113,13 +127,13 @@ class ScheduleReservationList implements ScheduleReservationListInterface
         $this->itemsByStartTime[$start->timestamp] = $item;
     }
 
-    private function ItemStartsOnPastDate(ReservationListItem $item)
+    private function itemStartsOnPastDate(ReservationListItem $item)
     {
         //Log::Debug("PAST");
         return $item->startDate()->compare($this->layoutDateStart) <= 0;
     }
 
-    private function ItemEndsOnFutureDate(ReservationListItem $item)
+    private function itemEndsOnFutureDate(ReservationListItem $item)
     {
         //Log::Debug("%s %s %s", $reservation->GetReferenceNumber(), $reservation->GetEndDate()->GetDate(), $this->_layoutDateEnd->GetDate());
         return $item->endDate()->compare($this->layoutDateEnd) >= 0;

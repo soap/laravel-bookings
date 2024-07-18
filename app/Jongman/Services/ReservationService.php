@@ -2,7 +2,4 @@
 
 namespace App\Jongman\Services;
 
-class ReservationService 
-{
-    
-}
+class ReservationService {}
